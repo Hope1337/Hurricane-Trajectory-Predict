@@ -61,7 +61,7 @@ def train_model():
 
     # Khởi tạo mô hình, loss function, và optimizer
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = StormLSTM(input_size=2, hidden_size=50, num_layers=2, output_size=2).to(device)
+    model = StormLSTM().to(device)
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     
@@ -85,7 +85,7 @@ def train_model():
             
             hidden = None
 
-            traj_loss = 0
+            traj_loss = 0.
             traj_points = 0
             
             for i in range(len(trajectory) - 1):
@@ -101,16 +101,17 @@ def train_model():
                 #sys.exit()
                 
                 loss = criterion(output, target_point)
-                traj_loss += loss.item()
+                traj_loss += loss
                 traj_points += 1
                 
-                loss.backward(retain_graph=True)
+                #loss.backward(retain_graph=True)
                 #print(loss)
             
+            traj_loss.backward()
             optimizer.step()
             optimizer.zero_grad()
             
-            total_loss += traj_loss
+            total_loss += traj_loss.item()
             total_points += traj_points
                     
         avg_loss = total_loss / total_points if total_points > 0 else 0

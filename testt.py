@@ -19,25 +19,23 @@ class StormMapApp:
         self.df = pd.read_csv('ibtracs.WP.list.v04r01.csv')
         self.init_model()
         
-        # Danh sách các điểm được click và các đường nối
+        # Danh sách các điểm được click, các đường nối và các điểm dự đoán
         self.clicked_points = []
         self.red_lines = []
+        self.predicted_points = []
         
         # Tạo figure với cartopy
         self.fig = plt.Figure(figsize=(10, 6))
         self.ax = self.fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
         
-        # Thiết lập phạm vi bản đồ (Atlantic region)
-        self.ax.set_extent([-100, 0, 0, 60], crs=ccrs.PlateCarree())
+        # Thiết lập phạm vi bản đồ (Western Pacific region)
+        self.ax.set_extent([100, 180, -10, 50], crs=ccrs.PlateCarree())
         
         # Thêm các feature cho bản đồ
         self.ax.add_feature(cfeature.LAND)
         self.ax.add_feature(cfeature.OCEAN)
         self.ax.add_feature(cfeature.COASTLINE)
         self.ax.add_feature(cfeature.BORDERS, linestyle=':')
-        
-        # Vẽ các quỹ đạo bão
-        #self.plot_storm_trajectories()
         
         # Tạo canvas để hiển thị trong tkinter
         self.canvas = FigureCanvasTkAgg(self.fig, master=root)
@@ -145,12 +143,23 @@ class StormMapApp:
 
     def undo(self):
         if self.clicked_points:
+            # Xóa điểm cuối cùng
             last_point = self.clicked_points.pop()
             last_point[2].remove()  # Xóa marker
             
+            # Xóa đường nối cuối cùng nếu có
             if self.red_lines:
                 last_line = self.red_lines.pop()
                 last_line.remove()
+            
+            # Xóa tất cả các điểm dự đoán
+            for pred_point in self.predicted_points:
+                pred_point.remove()
+            self.predicted_points = []
+            
+            # Vẽ lại các điểm dự đoán nếu còn điểm click
+            if self.clicked_points:
+                self.predict_traj()
             
             self.canvas.draw()
 
@@ -182,12 +191,19 @@ class StormMapApp:
         self.model.load_pretrained()
         
     def predict_traj(self):
+        # Xóa các điểm dự đoán trước đó
+        for pred_point in self.predicted_points:
+            pred_point.remove()
+        self.predicted_points = []
+        
+        # Dự đoán quỹ đạo mới
         clicked_point = [[float(point[0]), float(point[1])] for point in self.clicked_points]
         predicted_points = self.model.predict_traj(clicked_point)
         for lon, lat in predicted_points:
-            self.ax.plot(lon, lat, 'go', transform=ccrs.PlateCarree())
-        
-        
+            point, = self.ax.plot(lon, lat, 'go', transform=ccrs.PlateCarree())
+            self.predicted_points.append(point)
+
+
 if __name__ == "__main__":
     root = tk.Tk()
     app = StormMapApp(root)

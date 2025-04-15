@@ -3,7 +3,7 @@ import torch.nn as nn
 from load_data import Cus_Converter
 
 class StormLSTM(nn.Module):
-    def __init__(self, input_size=2, hidden_size=50, num_layers=2, output_size=2):
+    def __init__(self, input_size=2, hidden_size=128, num_layers=5, output_size=2):
         super(StormLSTM, self).__init__()
         self.hidden_size = hidden_size
         self.num_layers = num_layers
